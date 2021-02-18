@@ -5,6 +5,8 @@ import random
 import shutil
 import subprocess
 import time
+import pdb
+
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
@@ -848,6 +850,7 @@ def apply_classifier(x, model, img, im0):
     # applies a second stage classifier to yolo outputs
     im0 = [im0] if isinstance(im0, np.ndarray) else im0
     for i, d in enumerate(x):  # per image
+        
         if d is not None and len(d):
             d = d.clone()
 
@@ -873,10 +876,12 @@ def apply_classifier(x, model, img, im0):
                 im /= 255.0  # 0 - 255 to 0.0 - 1.0
                 ims.append(im)
 
-            pred_cls2 = model(torch.Tensor(ims).to(d.device)).argmax(1)  # classifier prediction
+            embedding = model(torch.Tensor(ims).to(d.device))
+            
+            pred_cls2 = embedding.argmax(1)  # classifier prediction
             x[i] = x[i][pred_cls1 == pred_cls2]  # retain matching class detections
 
-    return x
+    return embedding
 
 
 def fitness(x):
