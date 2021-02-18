@@ -3,6 +3,8 @@ import os
 import platform
 import shutil
 import time
+import pdb
+
 from pathlib import Path
 
 import cv2
@@ -52,10 +54,11 @@ def detect(save_img=False):
         model.half()  # to FP16
 
     # Second-stage classifier
-    classify = False
+    classify = True
     if classify:
-        modelc = load_classifier(name='resnet101', n=2)  # initialize
-        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model'])  # load weights
+        modelc = load_classifier(name='resnet101', n=1000)  # initialize
+        modelc.load_state_dict(torch.load('weights/resnet101.pth', map_location=device))
+        #modelc.load_state_dict(torch.load('weights/resnet101.pth', map_location=device)['model'])  # load weights
         modelc.to(device).eval()
 
     # Set Dataloader
@@ -76,6 +79,8 @@ def detect(save_img=False):
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+    
+    embeddings = list()
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -93,8 +98,10 @@ def detect(save_img=False):
 
         # Apply Classifier
         if classify:
-            pred = apply_classifier(pred, modelc, img, im0s)
-
+            predictions = pred.copy()
+            embedding = apply_classifier(predictions, modelc, img, im0s)
+            embeddings.append(embedding)
+                
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
@@ -106,6 +113,7 @@ def detect(save_img=False):
             txt_path = str(Path(out) / Path(p).stem) + ('_%g' % dataset.frame if dataset.mode == 'video' else '')
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
@@ -117,6 +125,18 @@ def detect(save_img=False):
 
                 # Write results
                 for *xyxy, conf, cls in det:
+
+                    #xyxy_int = [int(x.cpu()) for x in xyxy]
+                    #player = im0[xyxy_int[1]:xyxy_int[3],xyxy_int[0]:xyxy_int[2],:]
+                    #print(i)
+                    #cv2.imwrite(f'test{i}.jpg', player)                  
+                    
+                    #if classify:
+                        #pdb.set_trace()
+                        #embedding = modelc(torch.Tensor(player).to(det.device))
+                        #prediction, embedding = apply_classifier(pred, modelc, img, im0s)
+                        #embeddings.append(embedding)
+
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         with open(txt_path + '.txt', 'a') as f:
@@ -125,7 +145,7 @@ def detect(save_img=False):
                     if save_img or view_img:  # Add bbox to image
                         label = '%s %.2f' % (names[int(cls)], conf)
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
-
+            
             # Print time (inference + NMS)
             print('%sDone. (%.3fs)' % (s, t2 - t1))
 
@@ -159,6 +179,8 @@ def detect(save_img=False):
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
+    return embeddings
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -183,7 +205,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['']:
-                detect()
+                embeddings = detect()
                 strip_optimizer(opt.weights)
         else:
-            detect()
+            embeddings = detect()
