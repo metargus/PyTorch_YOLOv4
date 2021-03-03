@@ -99,6 +99,12 @@ python train.py --device 0 --batch-size 16 --img 640 640 --data coco.yaml --cfg 
 python test.py --img 640 --conf 0.001 --batch 8 --device 0 --data coco.yaml --cfg cfg/yolov4-pacsp.cfg --weights weights/yolov4-pacsp.pt
 ```
 
+## Detection
+
+```
+python3 detect.py --device 0 --cfg cfg/yolov4-pacsp.cfg --weights weights/yolov4-pacsp.weights --source 'inference/folder_with_images'
+```
+
 ## Citation
 
 ```
