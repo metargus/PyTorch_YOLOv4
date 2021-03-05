@@ -30,8 +30,8 @@ def load_classes(path):
     return list(filter(None, names))  # filter removes empty strings (such as last line)
 
 def detect(save_img=False):
-    out, source, weights, view_img, save_txt, imgsz, cfg, names = \
-        opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.cfg, opt.names
+    out, source, weights, view_img, save_txt, imgsz, cfg, names, classify = \
+        opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.cfg, opt.names, opt.classify
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     # Initialize
@@ -54,13 +54,14 @@ def detect(save_img=False):
         model.half()  # to FP16
 
     # Second-stage classifier
-    classify = True
     if classify:
+        embeddings = list()
+
         modelc = load_classifier(name='resnet101', n=1000)  # initialize
         modelc.load_state_dict(torch.load('weights/resnet101.pth', map_location=device))
         #modelc.load_state_dict(torch.load('weights/resnet101.pth', map_location=device)['model'])  # load weights
         modelc.to(device).eval()
-
+        
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
@@ -80,7 +81,6 @@ def detect(save_img=False):
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
     
-    embeddings = list()
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -124,19 +124,7 @@ def detect(save_img=False):
                     s += '%g %ss, ' % (n, names[int(c)])  # add to string
 
                 # Write results
-                for *xyxy, conf, cls in det:
-
-                    #xyxy_int = [int(x.cpu()) for x in xyxy]
-                    #player = im0[xyxy_int[1]:xyxy_int[3],xyxy_int[0]:xyxy_int[2],:]
-                    #print(i)
-                    #cv2.imwrite(f'test{i}.jpg', player)                  
-                    
-                    #if classify:
-                        #pdb.set_trace()
-                        #embedding = modelc(torch.Tensor(player).to(det.device))
-                        #prediction, embedding = apply_classifier(pred, modelc, img, im0s)
-                        #embeddings.append(embedding)
-
+                for *xyxy, conf, cls in det:                    
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         with open(txt_path + '.txt', 'a') as f:
@@ -179,7 +167,8 @@ def detect(save_img=False):
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
-    return embeddings
+    if classify:
+        return embeddings
 
 
 if __name__ == '__main__':
@@ -199,13 +188,20 @@ if __name__ == '__main__':
     parser.add_argument('--update', action='store_true', help='update all models')
     parser.add_argument('--cfg', type=str, default='cfg/yolov4.cfg', help='*.cfg path')
     parser.add_argument('--names', type=str, default='data/coco.names', help='*.cfg path')
+    parser.add_argument('--classify', action='store_true', help='output an ImageNet embedding (classification layer) of each bounding box')
     opt = parser.parse_args()
     print(opt)
 
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['']:
-                embeddings = detect()
-                strip_optimizer(opt.weights)
+                if opt.classify:
+                    embeddings = detect()
+                else:
+                    detect()
+                    strip_optimizer(opt.weights)
         else:
-            embeddings = detect()
+            if opt.classify:
+                embeddings = detect()
+            else:
+                detect()
