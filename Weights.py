@@ -26,7 +26,7 @@ def download_weights(weights_url,file_name):
     """
     # file_id is a unique identifier of the Google Drive File
     file_id = re.findall(r"(?<=d\/)(.*)(?=\/view)",weights_url)[0]
-    cmd_head = "bash ./gdrive.sh"
+    cmd_head = "bash scripts/gdrive.sh"
     cmd = cmd_head + " " + file_id + " " + file_name
     try:
         subprocess.call(cmd.split(" "))
