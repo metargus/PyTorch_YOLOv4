@@ -3,11 +3,9 @@ import os
 import platform
 import shutil
 import time
-import pdb
 import Weights
 
 from pathlib import Path
-import pdb
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
@@ -92,7 +90,6 @@ def detect(save_img=False):
         # Inference
         t1 = time_synchronized()
         pred = model(img, augment=opt.augment)[0]
-        pdb.set_trace()
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         t2 = time_synchronized()
