@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pytorch-yolov4",
-    version="0.0.2",
+    version="0.0.1",
     #author="Example Author",
     #author_email="author@example.com",
     description="Pytorch implementation of YOLOv4",
@@ -23,7 +23,7 @@ setuptools.setup(
     #packages=setuptools.find_packages(),
     python_requires=">=3.6",
     install_requires=[
-        "numpy==1.17",
+        "numpy>=1.17",
         "opencv-python >= 4.1",
         "torch >= 1.6",
         "torchvision",
