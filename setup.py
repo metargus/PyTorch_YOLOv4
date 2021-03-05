@@ -25,7 +25,7 @@ setuptools.setup(
     install_requires=[
         "numpy==1.17",
         "opencv-python >= 4.1",
-        "torch == 1.6",
+        "torch >= 1.6",
         "torchvision",
         "matplotlib",
         "pycocotools",
