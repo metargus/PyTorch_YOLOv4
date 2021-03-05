@@ -48,8 +48,8 @@ def create_modules(module_defs, img_size, cfg):
                 modules.add_module('activation', nn.LeakyReLU(0.1, inplace=True))
             elif mdef['activation'] == 'swish':
                 modules.add_module('activation', Swish())
-            # elif mdef['activation'] == 'mish':
-            #     modules.add_module('activation', Mish())
+            elif mdef['activation'] == 'mish':
+                modules.add_module('activation', Mish())
 
         elif mdef['type'] == 'deformableconvolutional':
             bn = mdef['batch_normalize']
@@ -80,8 +80,8 @@ def create_modules(module_defs, img_size, cfg):
                 modules.add_module('activation', nn.LeakyReLU(0.1, inplace=True))
             elif mdef['activation'] == 'swish':
                 modules.add_module('activation', Swish())
-            # elif mdef['activation'] == 'mish':
-            #     modules.add_module('activation', Mish())
+            elif mdef['activation'] == 'mish':
+                modules.add_module('activation', Mish())
 
         elif mdef['type'] == 'BatchNorm2d':
             filters = output_filters[-1]
