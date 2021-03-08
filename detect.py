@@ -4,7 +4,6 @@ import platform
 import shutil
 import time
 import Weights
-import pdb
 from pathlib import Path
 import cv2
 import torch
