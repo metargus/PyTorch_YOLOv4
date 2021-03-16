@@ -183,11 +183,13 @@ if __name__ == '__main__':
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--update', action='store_true', help='update all models')
     parser.add_argument('--cfg', type=str, default='cfg/yolov4.cfg', help='*.cfg path')
+    parser.add_argument('--weights', type=str, help='*.pt path')
     parser.add_argument('--names', type=str, default='data/coco.names', help='*.cfg path')
     parser.add_argument('--classify', action='store_true', help='output an ImageNet embedding (classification layer) of each bounding box')
     opt = parser.parse_args()
     print(opt)
-    opt.weights = Weights.get_weights(opt.cfg)
+    if not opt.weights:
+        opt.weights = Weights.get_weights(opt.cfg)
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['']:
